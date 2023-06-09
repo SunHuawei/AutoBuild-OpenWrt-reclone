@@ -105,6 +105,7 @@ jobs:
         find dl -size -1024c -exec rm -f {} \;
 
     - name: Build firmware
+      id: build_firmware
       working-directory: ./openwrt
       run: |
         echo -e "$(nproc) thread build."
