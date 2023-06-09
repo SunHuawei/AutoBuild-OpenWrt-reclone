@@ -2,15 +2,27 @@
 # Description: Build OpenWrt using GitHub Actions
 # Lisence: MIT
 # Author: eSirPlayground
-# Youtube Channel: https://goo.gl/fvkdwm 
+# Youtube Channel: https://goo.gl/fvkdwm
 #=================================================
 
 name: Build_x86_64
 
 # Add a button to trigger the workflow
-on: 
+on:
   repository_dispatch:
   workflow_dispatch:
+
+env:
+  FIRMWARE: openwrt/lede.tar.gz
+  # FIRMWARE: openwrt/bin/targets/*/*/openwrt-*-*-generic-squashfs-combined-efi.img*
+  UPLOAD_FIC_TRANSFER: true
+  UPLOAD_WSS_TRANSFER: true
+  UPLOAD_GG_TRANSFER: true
+  UPLOAD_NULL_TRANSFER: true
+  UPLOAD_CAT_TRANSFER: true
+  UPLOAD_FIO_TRANSFER: true
+  UPLOAD_RELEASE: true
+  UPLOAD_ARTIFACT: false
 
 jobs:
   build:
@@ -50,14 +62,14 @@ jobs:
         sudo -E apt-get clean
 
     - name: Clone source code
-      env: 
+      env:
         REPO_URL: https://github.com/coolsnowwolf/lede
         REPO_BRANCH: master
       run: |
         git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
         cd openwrt
         echo "src-git ssrp https://github.com/fw876/helloworld.git" >> ./feeds.conf.default
-        
+
     - name: Update & Install feeds
       working-directory: ./openwrt
       run: |
@@ -65,16 +77,17 @@ jobs:
         ./scripts/feeds install -a
         ./scripts/feeds install -a
 
-    #- name: Import external feeds - passwall
-    #  working-directory: ./openwrt
-    #  run: |
+    - name: Import external feeds - passwall
+      working-directory: ./openwrt
+      run: |
+        git clone https://github.com/vernesong/OpenClash.git package/OpenClash
     #    git clone https://github.com/xiaorouji/openwrt-passwall.git package/lienol
-    #    git clone "your_github_link" package/"your_folder_name"      
+    #    git clone "your_github_link" package/"your_folder_name"
 
-    #- name: Import external feeds - JerryKuKu Argon
-    #  working-directory: ./openwrt
-    #  run: |
-    #    git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon-jerrykuku
+    - name: Import external feeds - JerryKuKu Argon
+      working-directory: ./openwrt
+      run: |
+        git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon-jerrykuku
 
     - name: Configuration Customization - Build_x86_64
       env:
@@ -83,7 +96,7 @@ jobs:
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x ./customize.sh && ./customize.sh
         cd openwrt && make defconfig
-        
+
     - name: Download package
       working-directory: ./openwrt
       run: |
@@ -96,8 +109,89 @@ jobs:
       run: |
         echo -e "$(nproc) thread build."
         make -j$(nproc) V=s
+        tar -czf lede.tar.gz bin/*
+        echo "::set-output name=status::success"
 
-    - name : Upload artifact
+    - name: Upload to gg
+      id: gg_transfer
+      if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_GG_TRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer gg --no-progress ${FIRMWARE} 2>&1 | tee gg_transfer.log
+        echo "::warning file=gg_transfer.com::$(cat gg_transfer.log | grep https)"
+        echo "::set-output name=url::$(cat gg_transfer.log | grep https | cut -f3 -d" ")"
+
+    - name: Upload to null
+      id: null_transfer
+      if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_NULL_TRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer null --no-progress ${FIRMWARE} 2>&1 | tee null_transfer.log
+        echo "::warning file=null_transfer.com::$(cat null_transfer.log | grep https)"
+        echo "::set-output name=url::$(cat null_transfer.log | grep https | cut -f3 -d" ")"
+
+    - name: Upload to cat
+      id: cat_transfer
+      if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_CAT_TRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer cat --no-progress ${FIRMWARE} 2>&1 | tee cat_transfer.log
+        echo "::warning file=cat_transfer.com::$(cat cat_transfer.log | grep https)"
+        echo "::set-output name=url::$(cat cat_transfer.log | grep https | cut -f3 -d" ")"
+
+    - name: Upload to fio
+      id: fio_transfer
+      if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_FIO_TRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer fio --no-progress ${FIRMWARE} 2>&1 | tee fio_transfer.log
+        echo "::warning file=fio_transfer.com::$(cat fio_transfer.log | grep https)"
+        echo "::set-output name=url::$(cat fio_transfer.log | grep https | cut -f3 -d" ")"
+
+    - name: Upload to fic
+      id: fic_transfer
+      if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_FIC_TRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer fic --no-progress ${FIRMWARE} 2>&1 | tee fic_transfer.log
+        echo "::warning file=fic_transfer.com::$(cat fic_transfer.log | grep https)"
+        echo "::set-output name=url::$(cat fic_transfer.log | grep https | cut -f3 -d" ")"
+
+    - name: Upload to wss
+      id: wss_transfer
+      if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_WSS_TRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer wss --no-progress ${FIRMWARE} 2>&1 | tee wss_transfer.log
+        echo "::warning file=wss_transfer.com::$(cat wss_transfer.log | grep https)"
+        echo "::set-output name=url::$(cat wss_transfer.log | grep https | cut -f3 -d" ")"
+
+    - name: Publish Tag
+      id: tag
+      if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
+      run: |
+        echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")"
+        touch release.txt
+        [ $UPLOAD_FIC_TRANSFER = true ] && echo "🔗 [1Fichier](${{ steps.fic_transfer.outputs.url }})" >> release.txt
+        [ $UPLOAD_WSS_TRANSFER = true ] && echo "🔗 [Wenshushu](${{ steps.wss_transfer.outputs.url }})" >> release.txt
+        [ $UPLOAD_GG_TRANSFER = true ] && echo "🔗 [DownloadGG](${{ steps.gg_transfer.outputs.url }})" >> release.txt
+        [ $UPLOAD_NULL_TRANSFER = true ] && echo "🔗 [Null](${{ steps.null_transfer.outputs.url }})" >> release.txt
+        [ $UPLOAD_CAT_TRANSFER = true ] && echo "🔗 [CatBox](${{ steps.cat_transfer.outputs.url }})" >> release.txt
+        [ $UPLOAD_FIO_TRANSFER = true ] && echo "🔗 [Fileio](${{ steps.fio_transfer.outputs.url }})" >> release.txt
+        echo "::set-output name=status::success"
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: steps.tag.outputs.status == 'success' && !cancelled()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        body_path: release.txt
+        files: ${{ env.FIRMWARE }}/*
+
+    - name: Upload artifact
+      if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_ARTIFACT == 'true' && !cancelled()
       uses: actions/upload-artifact@master
       with:
         name: OpenWrt
