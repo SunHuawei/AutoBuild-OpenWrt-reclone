@@ -116,6 +116,8 @@ jobs:
     - name: Upload to gg
       id: gg_transfer
       if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_GG_TRANSFER == 'true' && !cancelled()
+      timeout-minutes: 5
+      continue-on-error: true
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer gg --no-progress ${FIRMWARE} 2>&1 | tee gg_transfer.log
@@ -125,6 +127,8 @@ jobs:
     - name: Upload to null
       id: null_transfer
       if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_NULL_TRANSFER == 'true' && !cancelled()
+      timeout-minutes: 5
+      continue-on-error: true
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer null --no-progress ${FIRMWARE} 2>&1 | tee null_transfer.log
@@ -134,6 +138,8 @@ jobs:
     - name: Upload to cat
       id: cat_transfer
       if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_CAT_TRANSFER == 'true' && !cancelled()
+      timeout-minutes: 5
+      continue-on-error: true
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer cat --no-progress ${FIRMWARE} 2>&1 | tee cat_transfer.log
@@ -143,6 +149,8 @@ jobs:
     - name: Upload to fio
       id: fio_transfer
       if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_FIO_TRANSFER == 'true' && !cancelled()
+      timeout-minutes: 5
+      continue-on-error: true
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer fio --no-progress ${FIRMWARE} 2>&1 | tee fio_transfer.log
@@ -152,6 +160,8 @@ jobs:
     - name: Upload to fic
       id: fic_transfer
       if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_FIC_TRANSFER == 'true' && !cancelled()
+      timeout-minutes: 5
+      continue-on-error: true
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer fic --no-progress ${FIRMWARE} 2>&1 | tee fic_transfer.log
@@ -161,6 +171,8 @@ jobs:
     - name: Upload to wss
       id: wss_transfer
       if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_WSS_TRANSFER == 'true' && !cancelled()
+      timeout-minutes: 5
+      continue-on-error: true
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer wss --no-progress ${FIRMWARE} 2>&1 | tee wss_transfer.log
