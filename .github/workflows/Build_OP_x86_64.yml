@@ -201,7 +201,6 @@ jobs:
       with:
         tag_name: ${{ steps.tag.outputs.release_tag }}
         body_path: release.txt
-        files: ${{ env.FIRMWARE }}/*
 
     - name: Upload artifact
       if: steps.build_firmware.outputs.status == 'success' && env.UPLOAD_ARTIFACT == 'true' && !cancelled()
